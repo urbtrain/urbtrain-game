@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#f6c739" />
+    <meta name="description" content="URBTRAIN GAME — corrida urbana sem fim." />
+    <link rel="manifest" href="/urbtrain-game/manifest.webmanifest" />
+    <title>URBTRAIN GAME</title>
+  </head>
+  <body>
+    <canvas id="game-canvas" aria-label="URBTRAIN GAME"></canvas>
+    <main id="ui" aria-live="polite">
+      <section id="loading" class="screen visible"><div class="brand">URBTRAIN<span>GAME</span></div><div class="loader"><i></i></div><p id="loading-text">Preparando a pista…</p></section>
+      <section id="menu" class="screen card">
+        <div class="eyebrow">CORRIDA URBANA</div><h1>URBTRAIN <em>GAME</em></h1><p class="lead">Corra, desvie e conquiste a cidade.</p>
+        <button id="play-button" class="primary" aria-label="Iniciar jogo">JOGAR <b>›</b></button>
+        <div class="menu-actions"><button id="how-button">COMO JOGAR</button><button id="settings-button">CONFIGURAÇÕES</button></div>
+        <p class="best-label">MELHOR PONTUAÇÃO <strong id="menu-best">0</strong></p>
+      </section>
+      <section id="hud" aria-label="Informações da partida">
+        <div class="hud-top"><div class="medal">✦ <span id="medals">0</span></div><div class="score"><small>PONTOS</small><strong id="score">0</strong></div><button id="pause-button" aria-label="Pausar jogo">Ⅱ</button></div>
+        <div class="hud-bottom"><span><small>DISTÂNCIA</small><b id="distance">0 m</b></span><span><small>NÍVEL</small><b id="level">1</b></span></div>
+        <div id="powerup" class="powerup"></div>
+      </section>
+      <section id="pause" class="screen card modal"><h2>PAUSADO</h2><button id="resume-button" class="primary">CONTINUAR</button><button id="quit-button">VOLTAR AO MENU</button></section>
+      <section id="gameover" class="screen card modal"><div class="eyebrow">CORRIDA ENCERRADA</div><h2>QUASE LÁ!</h2><div class="results"><div><small>PONTOS</small><b id="final-score">0</b></div><div><small>DISTÂNCIA</small><b id="final-distance">0 m</b></div><div><small>MEDALHAS</small><b id="final-medals">0</b></div></div><p class="best-label">RECORDE <strong id="final-best">0</strong></p><button id="again-button" class="primary">CORRER DE NOVO</button><div class="menu-actions"><button id="share-button">COMPARTILHAR</button><button id="menu-button">MENU</button></div></section>
+      <section id="how" class="screen card modal"><h2>COMO JOGAR</h2><div class="instructions"><p><b>← →</b> Troque de faixa</p><p><b>↑</b> Pule barreiras</p><p><b>↓</b> Deslize sob placas</p><p class="muted">No celular, deslize o dedo na direção desejada.</p></div><button data-close class="primary">ENTENDI</button></section>
+      <section id="settings" class="screen card modal"><h2>CONFIGURAÇÕES</h2><label class="toggle">Som <input id="sound-toggle" type="checkbox" /><span></span></label><label class="toggle">Vibração <input id="vibration-toggle" type="checkbox" /><span></span></label><label>Qualidade<select id="quality-select"><option value="auto">Automática</option><option value="high">Alta</option><option value="medium">Média</option><option value="low">Baixa</option></select></label><button data-close class="primary">PRONTO</button></section>
+      <div id="rotate">↻<br /><b>Gire o aparelho</b><small>O jogo foi feito para jogar na vertical.</small></div>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
