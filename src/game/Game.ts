@@ -1,4 +1,4 @@
-import { ArcRotateCamera, Color3, Engine, HemisphericLight, Scene, Vector3 } from "@babylonjs/core";
+import { Color3, FreeCamera, Engine, HemisphericLight, Scene, Vector3 } from "@babylonjs/core";
 import { CONFIG, type PowerupKind } from "./GameConfig";
 import type { GameState } from "./GameState";
 import { PerformanceManager } from "./PerformanceManager";
@@ -9,11 +9,11 @@ import { Storage } from "../utils/Storage";
 import { UI } from "../ui/UI";
 
 export class Game {
-  private readonly engine: Engine; private readonly scene: Scene; private readonly camera: ArcRotateCamera; private readonly storage = new Storage(); private readonly runner: Runner; private readonly track: TrackManager; private readonly input: InputManager; private readonly performance: PerformanceManager; private readonly ui: UI;
+  private readonly engine: Engine; private readonly scene: Scene; private readonly camera: FreeCamera; private readonly storage = new Storage(); private readonly runner: Runner; private readonly track: TrackManager; private readonly input: InputManager; private readonly performance: PerformanceManager; private readonly ui: UI;
   private state: GameState = "loading"; private score = 0; private distance = 0; private medals = 0; private speed: number = CONFIG.initialSpeed; private powerup: { kind: PowerupKind; time: number } | null = null;
   public constructor(canvas: HTMLCanvasElement) {
     this.engine = new Engine(canvas, true, { preserveDrawingBuffer: false, stencil: false, adaptToDeviceRatio: true }); this.scene = new Scene(this.engine); this.scene.clearColor = Color3.FromHexString("#f4aa62").toColor4(1); this.scene.ambientColor = Color3.FromHexString("#ffffff");
-    this.camera = new ArcRotateCamera("camera", -Math.PI / 2, 1.12, 18, new Vector3(0, 1.8, 7), this.scene); this.camera.fov = 0.88; this.camera.inputs.clear();
+    this.camera = new FreeCamera("camera", new Vector3(0, 4.4, -11), this.scene); this.camera.setTarget(new Vector3(0, 1.8, 7)); this.camera.fov = 0.88;
     const hemi = new HemisphericLight("sky", new Vector3(0, 1, 0), this.scene); hemi.intensity = 1.15; hemi.diffuse = Color3.FromHexString("#ffe7bd"); hemi.groundColor = Color3.FromHexString("#1c2730");
     const sun = new HemisphericLight("warm", new Vector3(-0.8, 0.35, -0.5), this.scene); sun.intensity = 0.35; sun.diffuse = Color3.FromHexString("#ffc567");
     this.runner = new Runner(); this.track = new TrackManager(); this.performance = new PerformanceManager(this.engine, this.storage.get("quality"));
@@ -25,7 +25,7 @@ export class Game {
   }
   private frame(): void { const dt = Math.min(this.engine.getDeltaTime() / 1000, 0.05); if (this.state === "running") this.update(dt); this.scene.render(); }
   private update(dt: number): void {
-    this.speed = Math.min(CONFIG.maxSpeed, CONFIG.initialSpeed + this.distance / 160); this.distance += this.speed * dt; this.score += this.speed * dt * 4 + this.medals * 0.002; this.track.update(dt, this.speed); this.runner.update(dt); this.camera.target.x += (this.runner.root.position.x * 0.16 - this.camera.target.x) * dt * 4; this.camera.target.y = 1.8 + Math.sin(this.distance * 0.15) * 0.035; this.camera.fov = 0.88 + Math.min(0.08, (this.speed - CONFIG.initialSpeed) * 0.004);
+    this.speed = Math.min(CONFIG.maxSpeed, CONFIG.initialSpeed + this.distance / 160); this.distance += this.speed * dt; this.score += this.speed * dt * 4 + this.medals * 0.002; this.track.update(dt, this.speed); this.runner.update(dt); this.camera.position.x += (this.runner.root.position.x * 0.48 - this.camera.position.x) * dt * 4; this.camera.position.y = 4.4; this.camera.position.z = -11; this.camera.setTarget(new Vector3(this.runner.root.position.x * 0.18, 1.8 + Math.sin(this.distance * 0.15) * 0.035, 7)); this.camera.fov = 0.88 + Math.min(0.08, (this.speed - CONFIG.initialSpeed) * 0.004);
     if (this.powerup) { this.powerup.time -= dt; if (this.powerup.time <= 0) this.powerup = null; }
     this.track.forEachObject((object, position) => this.checkObject(object, position.z, position.x)); this.ui.update(this.score, this.distance, this.medals, Math.floor(this.distance / 350) + 1); this.ui.powerup(this.powerup?.kind ?? null, this.powerup?.time ?? 0); this.performance.update(dt);
   }
