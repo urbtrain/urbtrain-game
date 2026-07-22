@@ -1,4 +1,5 @@
 name: Deploy URBTRAIN GAME
+run-name: Publicar URBTRAIN GAME
 on:
   push:
     branches: [main]
