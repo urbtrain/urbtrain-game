@@ -13,7 +13,7 @@ export class Game {
   private state: GameState = "loading"; private score = 0; private distance = 0; private medals = 0; private speed: number = CONFIG.initialSpeed; private powerup: { kind: PowerupKind; time: number } | null = null;
   public constructor(canvas: HTMLCanvasElement) {
     this.engine = new Engine(canvas, true, { preserveDrawingBuffer: false, stencil: false, adaptToDeviceRatio: true }); this.scene = new Scene(this.engine); this.scene.clearColor = Color3.FromHexString("#f4aa62").toColor4(1); this.scene.ambientColor = Color3.FromHexString("#ffffff");
-    this.camera = new ArcRotateCamera("camera", Math.PI / 2, 1.12, 16, new Vector3(0, 1.8, 9), this.scene); this.camera.fov = 0.88; this.camera.inputs.clear();
+    this.camera = new ArcRotateCamera("camera", -Math.PI / 2, 1.12, 18, new Vector3(0, 1.8, 7), this.scene); this.camera.fov = 0.88; this.camera.inputs.clear();
     const hemi = new HemisphericLight("sky", new Vector3(0, 1, 0), this.scene); hemi.intensity = 1.15; hemi.diffuse = Color3.FromHexString("#ffe7bd"); hemi.groundColor = Color3.FromHexString("#1c2730");
     const sun = new HemisphericLight("warm", new Vector3(-0.8, 0.35, -0.5), this.scene); sun.intensity = 0.35; sun.diffuse = Color3.FromHexString("#ffc567");
     this.runner = new Runner(); this.track = new TrackManager(); this.performance = new PerformanceManager(this.engine, this.storage.get("quality"));
