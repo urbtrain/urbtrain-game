@@ -1,6 +1,7 @@
-import { Color3, Mesh, MeshBuilder, ParticleSystem, StandardMaterial, Sprite, SpriteManager, Texture, TransformNode, Vector3 } from "@babylonjs/core";
+import { Color3, Mesh, MeshBuilder, ParticleSystem, StandardMaterial, Texture, TransformNode, Vector3 } from "@babylonjs/core";
 import type { Scene } from "@babylonjs/core";
 import { CONFIG } from "../game/GameConfig";
+import { VoxelRunnerModel, type SkinId } from "./VoxelRunnerModel";
 
 export type RunnerState = "idle" | "run" | "jump" | "slide" | "hit";
 
@@ -10,7 +11,7 @@ export class Runner {
   public lane = 1;
   public verticalVelocity = 0;
   public slideTime = 0;
-  private readonly sprite: Sprite;
+  private readonly voxelModel: VoxelRunnerModel;
   private readonly shieldMesh: Mesh;
   private readonly shadowMesh: Mesh;
   private readonly shadowMat: StandardMaterial;
@@ -22,8 +23,8 @@ export class Runner {
   private shieldActive = false;
 
   public constructor(scene: Scene) {
-    const manager = new SpriteManager("runner-sprite-manager", "/urbtrain-game/sprites/urbtrain-runner-voxel-mobile.png", 1, { width: 512, height: 768 }, scene);
-    this.sprite = new Sprite("runner-sprite", manager);
+    this.voxelModel = new VoxelRunnerModel(scene);
+    this.voxelModel.root.parent = this.root;
     this.root.position = new Vector3(CONFIG.lanes[1], 0, 0);
 
     // Dynamic Ground Shadow Disc
@@ -68,8 +69,14 @@ export class Runner {
     this.footParticles.minEmitPower = 0.8;
     this.footParticles.maxEmitPower = 1.6;
     this.footParticles.start();
+  }
 
-    this.syncSprite();
+  public setSkin(skinId: SkinId): void {
+    this.voxelModel.applySkin(skinId);
+  }
+
+  public getSkin(): SkinId {
+    return this.voxelModel.getSkin();
   }
 
   public reset(): void {
@@ -82,7 +89,6 @@ export class Runner {
     this.squashImpact = 0;
     this.prevY = 0;
     this.setShield(false);
-    this.syncSprite();
   }
 
   public setShield(active: boolean): void {
@@ -93,7 +99,7 @@ export class Runner {
   public move(delta: number): void {
     const nextLane = Math.max(0, Math.min(2, this.lane + delta));
     if (nextLane !== this.lane) {
-      this.tilt = delta * 0.18; // Tilt sprite during lane shift
+      this.tilt = delta * 0.18; // Tilt during lane shift
       this.lane = nextLane;
     }
   }
@@ -135,7 +141,7 @@ export class Runner {
       this.root.position.y = Math.max(0, this.root.position.y + this.verticalVelocity * dt);
       if (this.root.position.y === 0) {
         if (this.prevY > 0.4) {
-          this.squashImpact = Math.min(0.35, this.prevY * 0.12); // Landing squash trigger
+          this.squashImpact = Math.min(0.35, this.prevY * 0.12);
         }
         this.verticalVelocity = 0;
         this.state = "run";
@@ -166,41 +172,17 @@ export class Runner {
     this.shadowMesh.scaling.set(0.4 + 0.6 * heightFactor, 0.4 + 0.6 * heightFactor, 1);
     this.shadowMat.alpha = 0.42 * heightFactor;
 
-    this.syncSprite();
+    // Apply tilt to 3D voxel model
+    this.voxelModel.root.rotation.z = -this.tilt;
+
+    // Delegate 3D Voxel animation
+    this.voxelModel.updateAnimation(dt, this.state, this.verticalVelocity, this.slideTime);
   }
 
   public isJumping(): boolean { return this.root.position.y > 0.75; }
   public isSliding(): boolean { return this.slideTime > 0.08; }
-
-  private syncSprite(): void {
-    const sliding = this.isSliding();
-    const runningBob = this.state === "run" ? Math.abs(Math.sin(this.elapsed * 13)) * 0.09 : 0;
-
-    // Base dimensions
-    let baseW = sliding ? 3.7 : 3.05;
-    let baseH = sliding ? 2.85 : 4.58;
-
-    // Apply Squash & Stretch physics
-    if (this.verticalVelocity > 0.5) {
-      // Stretch on jump ascent
-      const stretchRatio = Math.min(0.18, this.verticalVelocity * 0.012);
-      baseH *= (1 + stretchRatio);
-      baseW *= (1 - stretchRatio * 0.5);
-    } else if (this.squashImpact > 0.01) {
-      // Squash on landing impact
-      baseH *= (1 - this.squashImpact);
-      baseW *= (1 + this.squashImpact * 0.6);
-    }
-
-    this.sprite.width = baseW;
-    this.sprite.height = baseH;
-    this.sprite.position.set(this.root.position.x, this.root.position.y + (sliding ? 1.35 : 2.22) + runningBob, this.root.position.z);
-
-    // Combine running oscillation with lane shift tilt
-    const baseAngle = this.state === "run" ? Math.sin(this.elapsed * 13) * 0.01 : 0;
-    this.sprite.angle = baseAngle - this.tilt;
-  }
 }
+
 
 
 
