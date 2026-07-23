@@ -1,4 +1,4 @@
-import { Color3, DefaultRenderingPipeline, Engine, FreeCamera, GlowLayer, HemisphericLight, Scene, Vector3 } from "@babylonjs/core";
+import { Color3, DefaultRenderingPipeline, Engine, FreeCamera, HemisphericLight, Scene, Vector3 } from "@babylonjs/core";
 import { CONFIG, type PowerupKind } from "./GameConfig";
 import type { GameState } from "./GameState";
 import { PerformanceManager } from "./PerformanceManager";
@@ -32,37 +32,39 @@ export class Game {
   public constructor(canvas: HTMLCanvasElement) {
     this.engine = new Engine(canvas, true, { preserveDrawingBuffer: false, stencil: false, adaptToDeviceRatio: true });
     this.scene = new Scene(this.engine);
-    this.scene.clearColor = Color3.FromHexString("#f4aa62").toColor4(1);
-    this.scene.ambientColor = Color3.FromHexString("#ffffff");
+    // Sunny sky blue background
+    this.scene.clearColor = Color3.FromHexString("#6ec6f5").toColor4(1);
+    this.scene.ambientColor = Color3.FromHexString("#d4eaf7");
 
-    // Atmospheric Exponential Horizon Fog
+    // Soft daytime atmospheric haze
     this.scene.fogMode = Scene.FOGMODE_EXP2;
-    this.scene.fogColor = Color3.FromHexString("#f4aa62");
-    this.scene.fogDensity = 0.014;
-
-    // Neon & Emissive Glow Layer
-    new GlowLayer("glow", this.scene, { mainTextureFixedSize: 512, blurKernelSize: 16 });
+    this.scene.fogColor = Color3.FromHexString("#c5e8f7");
+    this.scene.fogDensity = 0.012;
 
     // Low & Immersive 3D Third-Person Camera
     this.camera = new FreeCamera("camera", new Vector3(0, 7.5, -16), this.scene);
     this.camera.setTarget(new Vector3(0, 1.8, 18));
     this.camera.fov = 1.02;
 
-    // Post-Processing Pipeline (Vignette & Tone Adjustment)
+    // Post-Processing: gentle vignette
     const pipeline = new DefaultRenderingPipeline("postFX", true, this.scene, [this.camera]);
     pipeline.imageProcessingEnabled = true;
     pipeline.imageProcessing.vignetteEnabled = true;
-    pipeline.imageProcessing.vignetteWeight = 1.35;
+    pipeline.imageProcessing.vignetteWeight = 0.7;
     pipeline.imageProcessing.vignetteCameraFov = 0.5;
+    pipeline.imageProcessing.contrast = 1.1;
+    pipeline.imageProcessing.exposure = 1.05;
 
+    // Bright daytime sun from above
     const hemi = new HemisphericLight("sky", new Vector3(0, 1, 0), this.scene);
-    hemi.intensity = 1.15;
-    hemi.diffuse = Color3.FromHexString("#ffe7bd");
-    hemi.groundColor = Color3.FromHexString("#1c2730");
+    hemi.intensity = 1.4;
+    hemi.diffuse = Color3.FromHexString("#ffffff");
+    hemi.groundColor = Color3.FromHexString("#5a8c3c"); // Green grass bounce light
 
-    const sun = new HemisphericLight("warm", new Vector3(-0.8, 0.35, -0.5), this.scene);
-    sun.intensity = 0.35;
-    sun.diffuse = Color3.FromHexString("#ffc567");
+    // Warm golden sun angle
+    const sun = new HemisphericLight("sun", new Vector3(-0.5, 0.8, -0.3), this.scene);
+    sun.intensity = 0.55;
+    sun.diffuse = Color3.FromHexString("#fff5d6");
 
     this.runner = new Runner(this.scene);
     this.track = new TrackManager(this.scene);
