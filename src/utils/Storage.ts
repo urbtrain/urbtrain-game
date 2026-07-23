@@ -1,8 +1,9 @@
 import type { Quality } from "../game/GameConfig";
+import type { SkinId } from "../player/VoxelRunnerModel";
 
 const KEY = "urbtrain-game";
-type Settings = { best: number; sound: boolean; vibration: boolean; quality: Quality; totalMedals: number; games: number; tutorial: boolean };
-const defaults: Settings = { best: 0, sound: true, vibration: true, quality: "auto", totalMedals: 0, games: 0, tutorial: false };
+type Settings = { best: number; sound: boolean; vibration: boolean; quality: Quality; totalMedals: number; games: number; tutorial: boolean; skin: SkinId };
+const defaults: Settings = { best: 0, sound: true, vibration: true, quality: "auto", totalMedals: 0, games: 0, tutorial: false, skin: "urban" };
 
 export class Storage {
   private data: Settings;
@@ -15,3 +16,4 @@ export class Storage {
   public increase<K extends "totalMedals" | "games">(key: K, amount = 1): void { this.data[key] += amount; this.save(); }
   private save(): void { try { localStorage.setItem(KEY, JSON.stringify(this.data)); } catch { /* Browser storage can be disabled. */ } }
 }
+
