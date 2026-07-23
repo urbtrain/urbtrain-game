@@ -16,7 +16,7 @@ export class Game {
     this.camera = new FreeCamera("camera", new Vector3(0, 16, -34), this.scene); this.camera.setTarget(new Vector3(0, 1.1, 23)); this.camera.fov = 1.05;
     const hemi = new HemisphericLight("sky", new Vector3(0, 1, 0), this.scene); hemi.intensity = 1.15; hemi.diffuse = Color3.FromHexString("#ffe7bd"); hemi.groundColor = Color3.FromHexString("#1c2730");
     const sun = new HemisphericLight("warm", new Vector3(-0.8, 0.35, -0.5), this.scene); sun.intensity = 0.35; sun.diffuse = Color3.FromHexString("#ffc567");
-    this.runner = new Runner(); this.track = new TrackManager(); this.performance = new PerformanceManager(this.engine, this.storage.get("quality"));
+    this.runner = new Runner(this.scene); this.track = new TrackManager(); this.performance = new PerformanceManager(this.engine, this.storage.get("quality"));
     this.ui = new UI(this.storage, { play: () => this.start(), again: () => this.start(), pause: () => this.pause(), resume: () => this.resume(), quit: () => this.menu(), share: () => this.share(), settings: () => undefined, quality: (quality) => this.performance.apply(quality) });
     this.input = new InputManager(canvas); this.input.on((action) => this.handleInput(action));
     window.addEventListener("resize", () => this.engine.resize()); document.addEventListener("visibilitychange", () => { if (document.hidden) this.pause(); });
