@@ -13,7 +13,7 @@ export class Game {
   private state: GameState = "loading"; private score = 0; private distance = 0; private medals = 0; private speed: number = CONFIG.initialSpeed; private powerup: { kind: PowerupKind; time: number } | null = null;
   public constructor(canvas: HTMLCanvasElement) {
     this.engine = new Engine(canvas, true, { preserveDrawingBuffer: false, stencil: false, adaptToDeviceRatio: true }); this.scene = new Scene(this.engine); this.scene.clearColor = Color3.FromHexString("#f4aa62").toColor4(1); this.scene.ambientColor = Color3.FromHexString("#ffffff");
-    this.camera = new FreeCamera("camera", new Vector3(0, 11.5, -26), this.scene); this.camera.setTarget(new Vector3(0, 1.8, 16)); this.camera.fov = 0.98;
+    this.camera = new FreeCamera("camera", new Vector3(0, 16, -34), this.scene); this.camera.setTarget(new Vector3(0, 1.1, 23)); this.camera.fov = 1.05;
     const hemi = new HemisphericLight("sky", new Vector3(0, 1, 0), this.scene); hemi.intensity = 1.15; hemi.diffuse = Color3.FromHexString("#ffe7bd"); hemi.groundColor = Color3.FromHexString("#1c2730");
     const sun = new HemisphericLight("warm", new Vector3(-0.8, 0.35, -0.5), this.scene); sun.intensity = 0.35; sun.diffuse = Color3.FromHexString("#ffc567");
     this.runner = new Runner(); this.track = new TrackManager(); this.performance = new PerformanceManager(this.engine, this.storage.get("quality"));
@@ -25,7 +25,7 @@ export class Game {
   }
   private frame(): void { const dt = Math.min(this.engine.getDeltaTime() / 1000, 0.05); if (this.state === "running") this.update(dt); this.scene.render(); }
   private update(dt: number): void {
-    this.speed = Math.min(CONFIG.maxSpeed, CONFIG.initialSpeed + this.distance / 160); this.distance += this.speed * dt; this.score += this.speed * dt * 4 + this.medals * 0.002; this.track.update(dt, this.speed); this.runner.update(dt); this.camera.position.x += (this.runner.root.position.x * 0.48 - this.camera.position.x) * dt * 4; this.camera.position.y = 11.5; this.camera.position.z = -26; this.camera.setTarget(new Vector3(this.runner.root.position.x * 0.22, 1.8 + Math.sin(this.distance * 0.15) * 0.035, 16)); this.camera.fov = 0.98 + Math.min(0.08, (this.speed - CONFIG.initialSpeed) * 0.004);
+    this.speed = Math.min(CONFIG.maxSpeed, CONFIG.initialSpeed + this.distance / 160); this.distance += this.speed * dt; this.score += this.speed * dt * 4 + this.medals * 0.002; this.track.update(dt, this.speed); this.runner.update(dt); this.camera.position.x += (this.runner.root.position.x * 0.48 - this.camera.position.x) * dt * 4; this.camera.position.y = 16; this.camera.position.z = -34; this.camera.setTarget(new Vector3(this.runner.root.position.x * 0.18, 1.1 + Math.sin(this.distance * 0.15) * 0.03, 23)); this.camera.fov = 1.05 + Math.min(0.06, (this.speed - CONFIG.initialSpeed) * 0.003);
     if (this.powerup) { this.powerup.time -= dt; if (this.powerup.time <= 0) this.powerup = null; }
     this.track.forEachObject((object, position) => this.checkObject(object, position.z, position.x)); this.ui.update(this.score, this.distance, this.medals, Math.floor(this.distance / 350) + 1); this.ui.powerup(this.powerup?.kind ?? null, this.powerup?.time ?? 0); this.performance.update(dt);
   }
