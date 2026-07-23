@@ -1,4 +1,4 @@
-import { Color3, FreeCamera, Engine, GlowLayer, HemisphericLight, Scene, Vector3 } from "@babylonjs/core";
+import { Color3, DefaultRenderingPipeline, Engine, FreeCamera, GlowLayer, HemisphericLight, Scene, Vector3 } from "@babylonjs/core";
 import { CONFIG, type PowerupKind } from "./GameConfig";
 import type { GameState } from "./GameState";
 import { PerformanceManager } from "./PerformanceManager";
@@ -48,6 +48,13 @@ export class Game {
     this.camera.setTarget(new Vector3(0, 1.8, 18));
     this.camera.fov = 1.02;
 
+    // Post-Processing Pipeline (Vignette & Tone Adjustment)
+    const pipeline = new DefaultRenderingPipeline("postFX", true, this.scene, [this.camera]);
+    pipeline.imageProcessingEnabled = true;
+    pipeline.imageProcessing.vignetteEnabled = true;
+    pipeline.imageProcessing.vignetteWeight = 1.35;
+    pipeline.imageProcessing.vignetteCameraFov = 0.5;
+
     const hemi = new HemisphericLight("sky", new Vector3(0, 1, 0), this.scene);
     hemi.intensity = 1.15;
     hemi.diffuse = Color3.FromHexString("#ffe7bd");
@@ -58,7 +65,7 @@ export class Game {
     sun.diffuse = Color3.FromHexString("#ffc567");
 
     this.runner = new Runner(this.scene);
-    this.track = new TrackManager();
+    this.track = new TrackManager(this.scene);
     this.performance = new PerformanceManager(this.engine, this.storage.get("quality"));
 
     this.ui = new UI(this.storage, this.audio, {
@@ -150,6 +157,7 @@ export class Game {
         if (object.kind === "medal") {
           this.medals += 1;
           this.score += 25;
+          this.track.triggerCoinFX(new Vector3(x, 1.45, z));
           this.audio.playMedal();
           this.vibrate(12);
         } else {
@@ -264,5 +272,6 @@ export class Game {
     if (this.storage.get("vibration") && navigator.vibrate) navigator.vibrate(pattern);
   }
 }
+
 
 
