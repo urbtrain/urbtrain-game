@@ -1,4 +1,5 @@
-import { Color3, Mesh, MeshBuilder, StandardMaterial, TransformNode, Vector3 } from "@babylonjs/core";
+import { Color3, Mesh, MeshBuilder, ParticleSystem, StandardMaterial, Texture, TransformNode, Vector3 } from "@babylonjs/core";
+import type { Scene } from "@babylonjs/core";
 import { CONFIG, type PowerupKind } from "../game/GameConfig";
 
 export type ObstacleKind = "normal" | "jump" | "slide";
@@ -9,9 +10,35 @@ export class TrackManager {
   private readonly segments: Segment[] = [];
   private readonly mats = new Map<string, StandardMaterial>();
   private readonly pools = new Map<string, Mesh[]>();
+  private coinFXSystem?: ParticleSystem;
 
-  public constructor() {
+  public constructor(scene?: Scene) {
     for (let index = 0; index < CONFIG.segmentCount; index += 1) this.segments.push(this.createSegment(index));
+
+    if (scene) {
+      this.coinFXSystem = new ParticleSystem("coinSparkles", 80, scene);
+      this.coinFXSystem.particleTexture = new Texture("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADEDt6AFgAAAEdJREFUGFdjZEACjEAZlAYxGIA0gACImQERQBYD0cACDAwMDP8ZgAQyG0wABEEa0AWQxf8zMEC8gwkgyiBqgTpwGgC2F5tGAB3IDh7eS3WcAAAAAElFTkSuQmCC", scene);
+      this.coinFXSystem.emitter = new Vector3(0, 0, 0);
+      this.coinFXSystem.color1 = new Color3(1.0, 0.84, 0.0).toColor4(1.0);
+      this.coinFXSystem.color2 = new Color3(1.0, 0.5, 0.0).toColor4(0.8);
+      this.coinFXSystem.minSize = 0.2;
+      this.coinFXSystem.maxSize = 0.5;
+      this.coinFXSystem.minLifeTime = 0.2;
+      this.coinFXSystem.maxLifeTime = 0.4;
+      this.coinFXSystem.emitRate = 0;
+      this.coinFXSystem.direction1 = new Vector3(-1, 1, -1);
+      this.coinFXSystem.direction2 = new Vector3(1, 2, 1);
+      this.coinFXSystem.minEmitPower = 2.0;
+      this.coinFXSystem.maxEmitPower = 4.5;
+      this.coinFXSystem.start();
+    }
+  }
+
+  public triggerCoinFX(position: Vector3): void {
+    if (this.coinFXSystem) {
+      this.coinFXSystem.emitter = position.clone();
+      this.coinFXSystem.manualEmitCount = 18;
+    }
   }
 
   public reset(): void {
@@ -63,7 +90,25 @@ export class TrackManager {
     const root = new TransformNode(`segment-${index}`);
     const road = MeshBuilder.CreateBox("road", { width: 12.6, height: 0.15, depth: CONFIG.segmentLength });
     road.parent = root;
-    road.material = this.mat("road", "#1b2025");
+    road.material = this.mat("road", "#181d22");
+
+    // URBTRAIN Metallic Neon Rails on all 3 lanes
+    for (const laneX of CONFIG.lanes) {
+      for (const railOffset of [-0.65, 0.65]) {
+        const rail = MeshBuilder.CreateBox("rail", { width: 0.08, height: 0.08, depth: CONFIG.segmentLength });
+        rail.parent = root;
+        rail.position = new Vector3(laneX + railOffset, 0.12, 0);
+        rail.material = this.mat("neon-rail", "#00d2ff", true);
+      }
+
+      // Wooden/Metal Sleepers periodically
+      for (let z = -14; z < 16; z += 1.8) {
+        const sleeper = MeshBuilder.CreateBox("sleeper", { width: 1.5, height: 0.04, depth: 0.32 });
+        sleeper.parent = root;
+        sleeper.position = new Vector3(laneX, 0.1, z);
+        sleeper.material = this.mat("sleeper-mat", "#322924");
+      }
+    }
 
     for (const x of [-5.3, 5.3]) {
       const sidewalk = MeshBuilder.CreateBox("sidewalk", { width: 1.4, height: 0.28, depth: CONFIG.segmentLength });
@@ -78,7 +123,7 @@ export class TrackManager {
         const line = MeshBuilder.CreateBox("lane-mark", { width: 0.13, height: 0.03, depth: 2.25 });
         line.parent = root;
         line.position = new Vector3(x, 0.11, z);
-        line.material = this.mat("mark", "#e9e5d9");
+        line.material = this.mat("mark-bright", "#ffe066", true);
       }
     }
 
@@ -211,7 +256,7 @@ export class TrackManager {
     const banner = MeshBuilder.CreateBox("urbtrain-banner", { width: 2.8, height: 0.8, depth: 0.05 });
     banner.parent = root;
     banner.position = new Vector3(x + (x < 0 ? 2.27 : -2.27), height * 0.65, z);
-    banner.material = this.mat("banner", CONFIG.colors.yellow);
+    banner.material = this.mat("banner-emissive", CONFIG.colors.yellow, true);
   }
 
   private mat(name: string, color: string, emissive = false): StandardMaterial {
@@ -220,9 +265,10 @@ export class TrackManager {
     const material = new StandardMaterial(name);
     material.diffuseColor = Color3.FromHexString(color);
     material.specularColor = Color3.Black();
-    if (emissive) material.emissiveColor = Color3.FromHexString(color).scale(0.45);
+    if (emissive) material.emissiveColor = Color3.FromHexString(color).scale(0.55);
     this.mats.set(name, material);
     return material;
   }
 }
+
 
