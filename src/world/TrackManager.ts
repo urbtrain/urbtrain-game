@@ -88,61 +88,75 @@ export class TrackManager {
 
   private createSegment(index: number): Segment {
     const root = new TransformNode(`segment-${index}`);
+
+    // Light grey asphalt road (day look)
     const road = MeshBuilder.CreateBox("road", { width: 12.6, height: 0.15, depth: CONFIG.segmentLength });
     road.parent = root;
-    road.material = this.mat("road", "#181d22");
+    road.material = this.mat("road", "#adb5b0");
 
-    // URBTRAIN Metallic Neon Rails on all 3 lanes
-    for (const laneX of CONFIG.lanes) {
-      for (const railOffset of [-0.65, 0.65]) {
-        const rail = MeshBuilder.CreateBox("rail", { width: 0.08, height: 0.08, depth: CONFIG.segmentLength });
-        rail.parent = root;
-        rail.position = new Vector3(laneX + railOffset, 0.12, 0);
-        rail.material = this.mat("neon-rail", "#00d2ff", true);
-      }
-
-      // Wooden/Metal Sleepers periodically
-      for (let z = -14; z < 16; z += 1.8) {
-        const sleeper = MeshBuilder.CreateBox("sleeper", { width: 1.5, height: 0.04, depth: 0.32 });
-        sleeper.parent = root;
-        sleeper.position = new Vector3(laneX, 0.1, z);
-        sleeper.material = this.mat("sleeper-mat", "#322924");
-      }
-    }
-
-    for (const x of [-5.3, 5.3]) {
-      const sidewalk = MeshBuilder.CreateBox("sidewalk", { width: 1.4, height: 0.28, depth: CONFIG.segmentLength });
-      sidewalk.parent = root;
-      sidewalk.position.x = x;
-      sidewalk.position.y = 0.08;
-      sidewalk.material = this.mat("sidewalk", "#5f6467");
-    }
-
+    // White lane dividers (day road markings)
     for (const x of [-1.6, 1.6]) {
       for (let z = -14; z < 16; z += 4.3) {
-        const line = MeshBuilder.CreateBox("lane-mark", { width: 0.13, height: 0.03, depth: 2.25 });
+        const line = MeshBuilder.CreateBox("lane-mark", { width: 0.14, height: 0.03, depth: 2.1 });
         line.parent = root;
         line.position = new Vector3(x, 0.11, z);
-        line.material = this.mat("mark-bright", "#ffe066", true);
+        line.material = this.mat("mark-white", "#f5f5f0");
       }
     }
 
+    // Green grass strips on both sides
+    for (const x of [-7.0, 7.0]) {
+      const grass = MeshBuilder.CreateBox("grass", { width: 4.5, height: 0.12, depth: CONFIG.segmentLength });
+      grass.parent = root;
+      grass.position = new Vector3(x, 0.0, 0);
+      grass.material = this.mat("grass", "#5aa83c");
+    }
+
+    // Sidewalk / curb (light concrete)
+    for (const x of [-5.1, 5.1]) {
+      const sidewalk = MeshBuilder.CreateBox("sidewalk", { width: 1.5, height: 0.22, depth: CONFIG.segmentLength });
+      sidewalk.parent = root;
+      sidewalk.position.x = x;
+      sidewalk.position.y = 0.05;
+      sidewalk.material = this.mat("sidewalk", "#d4c9a8");
+    }
+
+    // Wooden lamp posts with warm daylight globes
     for (let z = -12; z < 16; z += 8) {
       for (const side of [-1, 1]) {
-        const pole = MeshBuilder.CreateCylinder("lamp", { height: 5.5, diameter: 0.13, tessellation: 6 });
+        const pole = MeshBuilder.CreateCylinder("lamp", { height: 5.5, diameter: 0.15, tessellation: 8 });
         pole.parent = root;
         pole.position = new Vector3(side * 5.8, 2.8, z);
-        pole.material = this.mat("pole", "#242629");
+        pole.material = this.mat("wooden-pole", "#8b6343");
 
-        const light = MeshBuilder.CreateSphere("lamp-light", { diameter: 0.46, segments: 8 });
-        light.parent = root;
-        light.position = new Vector3(side * 5.8, 5.45, z);
-        light.material = this.mat("light", "#f6c739", true);
+        // Simple dome lamp cap
+        const cap = MeshBuilder.CreateSphere("lamp-cap", { diameter: 0.55, segments: 8 });
+        cap.parent = root;
+        cap.position = new Vector3(side * 5.8, 5.5, z);
+        cap.material = this.mat("lamp-cap", "#e8e4d8");
       }
     }
 
-    for (const z of [-9, 7]) this.addBuilding(root, -9, z, index);
-    for (const z of [-1, 14]) this.addBuilding(root, 9, z, index + 3);
+    // Trees in the grass strip
+    for (const zOff of [-10, -2, 6, 14]) {
+      for (const sideX of [-7.8, 7.8]) {
+        // Trunk
+        const trunk = MeshBuilder.CreateCylinder(`tree-trunk-${sideX}-${zOff}`, { height: 2.2, diameter: 0.35, tessellation: 8 });
+        trunk.parent = root;
+        trunk.position = new Vector3(sideX, 1.1, zOff + (index % 3) * 1.5);
+        trunk.material = this.mat("tree-trunk", "#7a5230");
+
+        // Canopy (round foliage)
+        const canopy = MeshBuilder.CreateSphere(`tree-canopy-${sideX}-${zOff}`, { diameter: 2.6, segments: 7 });
+        canopy.parent = root;
+        canopy.position = new Vector3(sideX, 3.3, zOff + (index % 3) * 1.5);
+        canopy.material = this.mat(`tree-leaf-${(index + Math.abs(sideX | 0)) % 3}`, ["#3a8c2a", "#4aab34", "#2e7520"][(index + Math.abs(sideX | 0)) % 3]);
+      }
+    }
+
+    for (const z of [-9, 7]) this.addBuilding(root, -10, z, index);
+    for (const z of [-1, 14]) this.addBuilding(root, 10, z, index + 3);
+
 
     return { root, objects: [], index };
   }
@@ -247,16 +261,19 @@ export class TrackManager {
   }
 
   private addBuilding(root: TransformNode, x: number, z: number, seed: number): void {
-    const height = 4 + (seed % 3) * 2;
+    const height = 5 + (seed % 4) * 2;
     const building = MeshBuilder.CreateBox("building", { width: 4.5, height, depth: 6 });
     building.parent = root;
     building.position = new Vector3(x, height / 2, z);
-    building.material = this.mat(`building-${seed % 3}`, ["#30373d", "#3c4148", "#28323b"][seed % 3]);
+    // Warm daytime building colors (creams, clay, warm whites)
+    const buildingColors = ["#e8d5b0", "#d4c69a", "#c9b58a", "#e2c9a0"];
+    building.material = this.mat(`building-${seed % 4}`, buildingColors[seed % 4]);
 
-    const banner = MeshBuilder.CreateBox("urbtrain-banner", { width: 2.8, height: 0.8, depth: 0.05 });
-    banner.parent = root;
-    banner.position = new Vector3(x + (x < 0 ? 2.27 : -2.27), height * 0.65, z);
-    banner.material = this.mat("banner-emissive", CONFIG.colors.yellow, true);
+    // Roof (terracotta / red tile)
+    const roof = MeshBuilder.CreateBox("roof", { width: 4.7, height: 0.4, depth: 6.2 });
+    roof.parent = root;
+    roof.position = new Vector3(x, height + 0.2, z);
+    roof.material = this.mat("roof", "#b55a2a");
   }
 
   private mat(name: string, color: string, emissive = false): StandardMaterial {
@@ -265,7 +282,8 @@ export class TrackManager {
     const material = new StandardMaterial(name);
     material.diffuseColor = Color3.FromHexString(color);
     material.specularColor = Color3.Black();
-    if (emissive) material.emissiveColor = Color3.FromHexString(color).scale(0.55);
+    // No emissive in daytime theme; preserve subtle highlights for medals/powerups only
+    if (emissive) material.emissiveColor = Color3.FromHexString(color).scale(0.2);
     this.mats.set(name, material);
     return material;
   }
