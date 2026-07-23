@@ -1,4 +1,4 @@
-import { Color3, Mesh, MeshBuilder, StandardMaterial, Sprite, SpriteManager, TransformNode, Vector3 } from "@babylonjs/core";
+import { Color3, Mesh, MeshBuilder, ParticleSystem, StandardMaterial, Sprite, SpriteManager, Texture, TransformNode, Vector3 } from "@babylonjs/core";
 import type { Scene } from "@babylonjs/core";
 import { CONFIG } from "../game/GameConfig";
 
@@ -14,8 +14,11 @@ export class Runner {
   private readonly shieldMesh: Mesh;
   private readonly shadowMesh: Mesh;
   private readonly shadowMat: StandardMaterial;
+  private readonly footParticles: ParticleSystem;
   private elapsed = 0;
   private tilt = 0;
+  private squashImpact = 0;
+  private prevY = 0;
   private shieldActive = false;
 
   public constructor(scene: Scene) {
@@ -47,6 +50,25 @@ export class Runner {
     this.shieldMesh.material = shieldMat;
     this.shieldMesh.setEnabled(false);
 
+    // Foot Dust Particle System
+    this.footParticles = new ParticleSystem("footDust", 60, scene);
+    this.footParticles.particleTexture = new Texture("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADEDt6AFgAAAEdJREFUGFdjZEACjEAZlAYxGIA0gACImQERQBYD0cACDAwMDP8ZgAQyG0wABEEa0AWQxf8zMEC8gwkgyiBqgTpwGgC2F5tGAB3IDh7eS3WcAAAAAElFTkSuQmCC", scene);
+    this.footParticles.emitter = this.shadowMesh;
+    this.footParticles.minEmitBox = new Vector3(-0.4, 0.05, -0.2);
+    this.footParticles.maxEmitBox = new Vector3(0.4, 0.1, 0.2);
+    this.footParticles.color1 = new Color3(0.9, 0.7, 0.4).toColor4(0.5);
+    this.footParticles.color2 = new Color3(1.0, 0.8, 0.5).toColor4(0.2);
+    this.footParticles.minSize = 0.15;
+    this.footParticles.maxSize = 0.35;
+    this.footParticles.minLifeTime = 0.15;
+    this.footParticles.maxLifeTime = 0.3;
+    this.footParticles.emitRate = 30;
+    this.footParticles.direction1 = new Vector3(-0.5, 0.5, -1);
+    this.footParticles.direction2 = new Vector3(0.5, 1.0, -2);
+    this.footParticles.minEmitPower = 0.8;
+    this.footParticles.maxEmitPower = 1.6;
+    this.footParticles.start();
+
     this.syncSprite();
   }
 
@@ -57,6 +79,8 @@ export class Runner {
     this.slideTime = 0;
     this.state = "run";
     this.tilt = 0;
+    this.squashImpact = 0;
+    this.prevY = 0;
     this.setShield(false);
     this.syncSprite();
   }
@@ -100,17 +124,24 @@ export class Runner {
     const diffX = targetX - this.root.position.x;
     this.root.position.x += diffX * (1 - Math.exp(-18 * dt));
 
-    // Smoothly decay tilt angle
+    // Smoothly decay tilt angle and landing squash impact
     this.tilt *= Math.exp(-12 * dt);
+    this.squashImpact *= Math.exp(-16 * dt);
+
+    const isGrounded = this.root.position.y <= 0.001 && this.verticalVelocity <= 0;
 
     if (this.root.position.y > 0 || this.verticalVelocity > 0) {
       this.verticalVelocity -= CONFIG.gravity * dt;
       this.root.position.y = Math.max(0, this.root.position.y + this.verticalVelocity * dt);
       if (this.root.position.y === 0) {
+        if (this.prevY > 0.4) {
+          this.squashImpact = Math.min(0.35, this.prevY * 0.12); // Landing squash trigger
+        }
         this.verticalVelocity = 0;
         this.state = "run";
       }
     }
+    this.prevY = this.root.position.y;
 
     if (this.slideTime > 0) {
       this.slideTime -= dt;
@@ -119,6 +150,13 @@ export class Runner {
 
     if (this.shieldActive) {
       this.shieldMesh.rotation.y += dt * 2.5;
+    }
+
+    // Foot dust particle emission control
+    if (isGrounded && (this.state === "run" || this.state === "slide")) {
+      this.footParticles.emitRate = this.state === "slide" ? 70 : 35;
+    } else {
+      this.footParticles.emitRate = 0;
     }
 
     // Update dynamic ground shadow based on jump height
@@ -137,8 +175,25 @@ export class Runner {
   private syncSprite(): void {
     const sliding = this.isSliding();
     const runningBob = this.state === "run" ? Math.abs(Math.sin(this.elapsed * 13)) * 0.09 : 0;
-    this.sprite.width = sliding ? 3.7 : 3.05;
-    this.sprite.height = sliding ? 2.85 : 4.58;
+
+    // Base dimensions
+    let baseW = sliding ? 3.7 : 3.05;
+    let baseH = sliding ? 2.85 : 4.58;
+
+    // Apply Squash & Stretch physics
+    if (this.verticalVelocity > 0.5) {
+      // Stretch on jump ascent
+      const stretchRatio = Math.min(0.18, this.verticalVelocity * 0.012);
+      baseH *= (1 + stretchRatio);
+      baseW *= (1 - stretchRatio * 0.5);
+    } else if (this.squashImpact > 0.01) {
+      // Squash on landing impact
+      baseH *= (1 - this.squashImpact);
+      baseW *= (1 + this.squashImpact * 0.6);
+    }
+
+    this.sprite.width = baseW;
+    this.sprite.height = baseH;
     this.sprite.position.set(this.root.position.x, this.root.position.y + (sliding ? 1.35 : 2.22) + runningBob, this.root.position.z);
 
     // Combine running oscillation with lane shift tilt
@@ -146,5 +201,6 @@ export class Runner {
     this.sprite.angle = baseAngle - this.tilt;
   }
 }
+
 
 
