@@ -17,7 +17,7 @@ export class Runner {
   private elapsed = 0;
   public constructor() {
     const skin = this.mat("skin", "#b97951"); const shirt = this.mat("shirt", CONFIG.colors.black); const yellow = this.mat("yellow", CONFIG.colors.yellow); const shoe = this.mat("shoe", CONFIG.colors.white); const dark = this.mat("dark", "#1a1210");
-    this.root.position = new Vector3(0, 0, 0);
+    this.root.position = new Vector3(0, 0, 0); this.root.scaling.setAll(0.72);
     this.torso = MeshBuilder.CreateBox("runner-torso", { width: 1.15, height: 1.55, depth: 0.55 }); this.torso.parent = this.root; this.torso.position.y = 2.2; this.torso.material = shirt;
     const stripe = MeshBuilder.CreateBox("runner-stripe", { width: 1.2, height: 0.17, depth: 0.58 }); stripe.parent = this.root; stripe.position.y = 2.45; stripe.material = yellow;
     const head = MeshBuilder.CreateSphere("runner-head", { diameter: 0.9, segments: 12 }); head.parent = this.root; head.position.y = 3.45; head.material = skin; this.addDirectionDetails(dark, yellow);
