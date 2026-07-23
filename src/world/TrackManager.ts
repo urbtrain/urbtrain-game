@@ -89,18 +89,18 @@ export class TrackManager {
   private createSegment(index: number): Segment {
     const root = new TransformNode(`segment-${index}`);
 
-    // Light grey asphalt road (day look)
+    // Medium-grey asphalt (correct contrast for daytime)
     const road = MeshBuilder.CreateBox("road", { width: 12.6, height: 0.15, depth: CONFIG.segmentLength });
     road.parent = root;
-    road.material = this.mat("road", "#adb5b0");
+    road.material = this.mat("road", "#6b7c72");
 
-    // White lane dividers (day road markings)
+    // Dashed yellow lane dividers (clearly visible on grey asphalt)
     for (const x of [-1.6, 1.6]) {
       for (let z = -14; z < 16; z += 4.3) {
-        const line = MeshBuilder.CreateBox("lane-mark", { width: 0.14, height: 0.03, depth: 2.1 });
+        const line = MeshBuilder.CreateBox("lane-mark", { width: 0.15, height: 0.04, depth: 2.1 });
         line.parent = root;
-        line.position = new Vector3(x, 0.11, z);
-        line.material = this.mat("mark-white", "#f5f5f0");
+        line.position = new Vector3(x, 0.12, z);
+        line.material = this.mat("mark-yellow", "#e8c832");
       }
     }
 
@@ -112,13 +112,13 @@ export class TrackManager {
       grass.material = this.mat("grass", "#5aa83c");
     }
 
-    // Sidewalk / curb (light concrete)
+    // Sidewalk / curb (warm stone)
     for (const x of [-5.1, 5.1]) {
       const sidewalk = MeshBuilder.CreateBox("sidewalk", { width: 1.5, height: 0.22, depth: CONFIG.segmentLength });
       sidewalk.parent = root;
       sidewalk.position.x = x;
       sidewalk.position.y = 0.05;
-      sidewalk.material = this.mat("sidewalk", "#d4c9a8");
+      sidewalk.material = this.mat("sidewalk", "#b8a882");
     }
 
     // Wooden lamp posts with warm daylight globes

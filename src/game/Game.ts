@@ -55,16 +55,16 @@ export class Game {
     pipeline.imageProcessing.contrast = 1.1;
     pipeline.imageProcessing.exposure = 1.05;
 
-    // Bright daytime sun from above
+    // Balanced daytime sun - warm but not overexposed
     const hemi = new HemisphericLight("sky", new Vector3(0, 1, 0), this.scene);
-    hemi.intensity = 1.4;
-    hemi.diffuse = Color3.FromHexString("#ffffff");
-    hemi.groundColor = Color3.FromHexString("#5a8c3c"); // Green grass bounce light
+    hemi.intensity = 0.85;
+    hemi.diffuse = Color3.FromHexString("#f5ead8");
+    hemi.groundColor = Color3.FromHexString("#4a7830"); // Grass bounce
 
-    // Warm golden sun angle
+    // Directional sun from side angle
     const sun = new HemisphericLight("sun", new Vector3(-0.5, 0.8, -0.3), this.scene);
-    sun.intensity = 0.55;
-    sun.diffuse = Color3.FromHexString("#fff5d6");
+    sun.intensity = 0.5;
+    sun.diffuse = Color3.FromHexString("#fff0c8");
 
     this.runner = new Runner(this.scene);
     this.track = new TrackManager(this.scene);

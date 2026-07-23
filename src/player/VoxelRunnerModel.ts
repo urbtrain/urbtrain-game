@@ -19,13 +19,13 @@ export const SKINS: Record<SkinId, SkinDefinition> = {
     urban: {
         id: "urban",
         name: "URBTRAIN Runner",
-        description: "Estilo urbano clássico com fones neon",
+        description: "Estilo urbano clássico com fones laranja",
         jacketColor: "#f07b27",
-        pantsColor: "#1c2730",
-        shoesColor: "#ffffff",
+        pantsColor: "#2a3540",
+        shoesColor: "#f0f0f0",
         skinColor: "#f2b388",
-        accessoryColor: "#00d2ff",
-        emissiveColor: "#00d2ff"
+        accessoryColor: "#e07a20",
+        emissiveColor: "#000000"
     },
     cyberpunk: {
         id: "cyberpunk",
